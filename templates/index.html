@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>天气查询系统</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+            backdrop-filter: blur(10px);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            color: #333;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .search-section {
+            margin-bottom: 30px;
+        }
+
+        .search-box {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .search-input {
+            flex: 1;
+            padding: 15px 20px;
+            border: 2px solid #e1e5e9;
+            border-radius: 50px;
+            font-size: 16px;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        .search-input:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .search-btn {
+            padding: 15px 30px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+
+        .search-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .search-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            color: #667eea;
+            font-size: 16px;
+        }
+
+        .loading.show {
+            display: block;
+        }
+
+        .weather-result {
+            display: none;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            border-radius: 15px;
+            padding: 30px;
+            margin-top: 20px;
+        }
+
+        .weather-result.show {
+            display: block;
+            animation: fadeInUp 0.5s ease;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .weather-header {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .city-name {
+            font-size: 2em;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .weather-main {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .weather-item {
+            background: rgba(255, 255, 255, 0.8);
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s ease;
+        }
+
+        .weather-item:hover {
+            transform: translateY(-2px);
+        }
+
+        .weather-label {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
+        }
+
+        .weather-value {
+            font-size: 1.3em;
+            color: #333;
+            font-weight: bold;
+            line-height: 1.2;
+        }
+
+        .error-message {
+            background: #ff6b6b;
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            margin-top: 20px;
+            display: none;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+
+        .example-cities {
+            text-align: center;
+            margin-top: 20px;
+            color: #666;
+        }
+
+        .example-cities span {
+            background: #f0f0f0;
+            padding: 5px 10px;
+            border-radius: 15px;
+            margin: 0 5px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .example-cities span:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 20px;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+            
+            .search-box {
+                flex-direction: column;
+            }
+            
+            .weather-main {
+                grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+                gap: 10px;
+            }
+            
+            .weather-item {
+                padding: 12px;
+            }
+            
+            .weather-label {
+                font-size: 11px;
+            }
+            
+            .weather-value {
+                font-size: 1.1em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🌤️ 天气查询系统</h1>
+            <p>实时查询全国城市天气信息</p>
+        </div>
+
+        <div class="search-section">
+            <div class="search-box">
+                <input type="text" class="search-input" id="cityInput" placeholder="请输入城市名称，如：北京、上海、广州..." maxlength="20">
+                <button class="search-btn" id="searchBtn">查询天气</button>
+            </div>
+            
+            <div class="loading" id="loading">
+                <div>正在查询天气信息，请稍候...</div>
+            </div>
+
+            <div class="example-cities">
+                <span>示例城市：</span>
+                <span onclick="searchCity('北京')">北京</span>
+                <span onclick="searchCity('上海')">上海</span>
+                <span onclick="searchCity('广州')">广州</span>
+                <span onclick="searchCity('深圳')">深圳</span>
+                <span onclick="searchCity('杭州')">杭州</span>
+            </div>
+        </div>
+
+        <div class="error-message" id="errorMessage"></div>
+
+        <div class="weather-result" id="weatherResult">
+            <div class="weather-header">
+                <div class="city-name" id="cityName"></div>
+            </div>
+            
+            <div class="weather-main" id="weatherMain">
+                <!-- 天气信息将在这里动态显示 -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const cityInput = document.getElementById('cityInput');
+        const searchBtn = document.getElementById('searchBtn');
+        const loading = document.getElementById('loading');
+        const weatherResult = document.getElementById('weatherResult');
+        const errorMessage = document.getElementById('errorMessage');
+        const cityName = document.getElementById('cityName');
+        const weatherMain = document.getElementById('weatherMain');
+
+        // 搜索天气函数
+        async function searchWeather(city) {
+            if (!city.trim()) {
+                showError('请输入城市名称');
+                return;
+            }
+
+            // 显示加载状态
+            showLoading(true);
+            hideError();
+            hideWeatherResult();
+
+            try {
+                const response = await fetch('/api/weather', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ city: city })
+                });
+
+                const data = await response.json();
+
+                if (data.error) {
+                    showError(data.error);
+                } else {
+                    showWeatherResult(data);
+                }
+            } catch (error) {
+                showError('网络错误，请稍后重试');
+                console.error('Error:', error);
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // 显示加载状态
+        function showLoading(show) {
+            if (show) {
+                loading.classList.add('show');
+                searchBtn.disabled = true;
+                searchBtn.textContent = '查询中...';
+            } else {
+                loading.classList.remove('show');
+                searchBtn.disabled = false;
+                searchBtn.textContent = '查询天气';
+            }
+        }
+
+        // 显示错误信息
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.classList.add('show');
+        }
+
+        // 隐藏错误信息
+        function hideError() {
+            errorMessage.classList.remove('show');
+        }
+
+        // 显示天气结果
+        function showWeatherResult(data) {
+            cityName.textContent = data.city || '未知城市';
+            
+            let weatherHtml = '';
+            
+            if (data.weather) {
+                weatherHtml += `
+                    <div class="weather-item">
+                        <div class="weather-label">天气状况</div>
+                        <div class="weather-value">${data.weather}</div>
+                    </div>
+                `;
+            }
+            
+            if (data.temperature) {
+                weatherHtml += `
+                    <div class="weather-item">
+                        <div class="weather-label">温度</div>
+                        <div class="weather-value">${data.temperature}</div>
+                    </div>
+                `;
+            }
+            
+            if (data.humidity) {
+                weatherHtml += `
+                    <div class="weather-item">
+                        <div class="weather-label">湿度</div>
+                        <div class="weather-value">${data.humidity}</div>
+                    </div>
+                `;
+            }
+            
+            if (data.wind) {
+                weatherHtml += `
+                    <div class="weather-item">
+                        <div class="weather-label">风向</div>
+                        <div class="weather-value">${data.wind}</div>
+                    </div>
+                `;
+            }
+            
+            if (data.air_quality) {
+                weatherHtml += `
+                    <div class="weather-item">
+                        <div class="weather-label">空气质量</div>
+                        <div class="weather-value">${data.air_quality}</div>
+                    </div>
+                `;
+            }
+            
+            if (data.sunrise) {
+                weatherHtml += `
+                    <div class="weather-item">
+                        <div class="weather-label">日出时间</div>
+                        <div class="weather-value">${data.sunrise}</div>
+                    </div>
+                `;
+            }
+            
+            if (data.sunset) {
+                weatherHtml += `
+                    <div class="weather-item">
+                        <div class="weather-label">日落时间</div>
+                        <div class="weather-value">${data.sunset}</div>
+                    </div>
+                `;
+            }
+            
+            if (data.clothing) {
+                weatherHtml += `
+                    <div class="weather-item">
+                        <div class="weather-label">穿衣指数</div>
+                        <div class="weather-value" style="font-size: 1.2em;">${data.clothing}</div>
+                    </div>
+                `;
+            }
+            
+            if (data.cold) {
+                weatherHtml += `
+                    <div class="weather-item">
+                        <div class="weather-label">感冒指数</div>
+                        <div class="weather-value" style="font-size: 1.2em;">${data.cold}</div>
+                    </div>
+                `;
+            }
+            
+            if (data.sports) {
+                weatherHtml += `
+                    <div class="weather-item">
+                        <div class="weather-label">运动指数</div>
+                        <div class="weather-value" style="font-size: 1.2em;">${data.sports}</div>
+                    </div>
+                `;
+            }
+            
+            if (data.uv) {
+                weatherHtml += `
+                    <div class="weather-item">
+                        <div class="weather-label">紫外线指数</div>
+                        <div class="weather-value" style="font-size: 1.2em;">${data.uv}</div>
+                    </div>
+                `;
+            }
+            
+            if (data.note) {
+                weatherHtml += `
+                    <div class="weather-item" style="grid-column: 1 / -1;">
+                        <div class="weather-label">备注</div>
+                        <div class="weather-value" style="font-size: 1em; color: #666;">${data.note}</div>
+                    </div>
+                `;
+            }
+            
+            weatherMain.innerHTML = weatherHtml;
+            weatherResult.classList.add('show');
+        }
+
+        // 隐藏天气结果
+        function hideWeatherResult() {
+            weatherResult.classList.remove('show');
+        }
+
+        // 搜索城市（示例城市点击）
+        function searchCity(city) {
+            cityInput.value = city;
+            searchWeather(city);
+        }
+
+        // 事件监听器
+        searchBtn.addEventListener('click', () => {
+            searchWeather(cityInput.value);
+        });
+
+        cityInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                searchWeather(cityInput.value);
+            }
+        });
+
+        // 页面加载完成后的初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            cityInput.focus();
+        });
+    </script>
+</body>
+</html> 

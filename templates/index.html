@@ -51,6 +51,34 @@
             font-size: 1.1em;
         }
 
+        .nav-buttons {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .nav-btn {
+            padding: 10px 20px;
+            margin: 0 10px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 20px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .nav-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .nav-btn.secondary {
+            background: linear-gradient(45deg, #6c757d, #495057);
+        }
+
         .search-section {
             margin-bottom: 30px;
         }
@@ -253,6 +281,11 @@
         <div class="header">
             <h1>🌤️ 天气查询系统</h1>
             <p>实时查询全国城市天气信息</p>
+        </div>
+
+        <div class="nav-buttons">
+            <a href="/" class="nav-btn">实时天气</a>
+            <a href="/history" class="nav-btn secondary">历史天气</a>
         </div>
 
         <div class="search-section">
@@ -503,4 +536,4 @@
         });
     </script>
 </body>
-</html> 
+</html>

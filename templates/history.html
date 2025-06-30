@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>历史天气查询</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            padding: 40px;
+            backdrop-filter: blur(10px);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            color: #333;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .nav-buttons {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .nav-btn {
+            padding: 12px 24px;
+            margin: 0 10px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .nav-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .nav-btn.secondary {
+            background: linear-gradient(45deg, #6c757d, #495057);
+        }
+
+        .search-section {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+        }
+
+        .search-form {
+            display: grid;
+            grid-template-columns: 1fr 1fr auto;
+            gap: 20px;
+            align-items: end;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group label {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .form-control {
+            padding: 12px 16px;
+            border: 2px solid #e1e5e9;
+            border-radius: 10px;
+            font-size: 16px;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .search-btn {
+            padding: 12px 30px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+
+        .search-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .search-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            color: #667eea;
+            font-size: 16px;
+            margin: 20px 0;
+        }
+
+        .loading.show {
+            display: block;
+        }
+
+        .error-message {
+            background: #ff6b6b;
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            margin: 20px 0;
+            display: none;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+
+        .history-results {
+            display: none;
+        }
+
+        .history-results.show {
+            display: block;
+            animation: fadeInUp 0.5s ease;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .history-item {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .history-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid rgba(102, 126, 234, 0.2);
+        }
+
+        .history-title {
+            font-size: 1.5em;
+            color: #333;
+            font-weight: bold;
+        }
+
+        .history-date {
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .weather-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+        }
+
+        .weather-card {
+            background: rgba(255, 255, 255, 0.8);
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .weather-label {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
+        }
+
+        .weather-value {
+            font-size: 1.2em;
+            color: #333;
+            font-weight: bold;
+        }
+
+        .no-data {
+            text-align: center;
+            color: #666;
+            font-size: 1.1em;
+            padding: 40px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+            
+            .search-form {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+            
+            .nav-buttons {
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .nav-btn {
+                margin: 0;
+            }
+            
+            .history-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+            
+            .weather-grid {
+                grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+                gap: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📅 历史天气查询</h1>
+            <p>查看历史天气记录和趋势分析</p>
+        </div>
+
+        <div class="nav-buttons">
+            <a href="/" class="nav-btn">实时天气</a>
+            <a href="/history" class="nav-btn secondary">历史天气</a>
+        </div>
+
+        <div class="search-section">
+            <form class="search-form" id="historyForm">
+                <div class="form-group">
+                    <label for="citySelect">选择城市</label>
+                    <select class="form-control" id="citySelect" required>
+                        <option value="">请选择城市</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="dateInput">选择日期（可选）</label>
+                    <input type="date" class="form-control" id="dateInput">
+                </div>
+                
+                <button type="submit" class="search-btn" id="searchBtn">查询历史</button>
+            </form>
+        </div>
+
+        <div class="stats-section" style="background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%); border-radius: 15px; padding: 20px; margin-bottom: 20px;">
+            <h3 style="margin-bottom: 15px; color: #1976d2;">📊 数据统计</h3>
+            <div id="statsInfo" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px;">
+                <div style="text-align: center; background: rgba(255,255,255,0.8); padding: 10px; border-radius: 8px;">
+                    <div style="font-size: 12px; color: #666;">总记录数</div>
+                    <div style="font-size: 18px; font-weight: bold; color: #1976d2;" id="totalRecords">-</div>
+                </div>
+                <div style="text-align: center; background: rgba(255,255,255,0.8); padding: 10px; border-radius: 8px;">
+                    <div style="font-size: 12px; color: #666;">城市数量</div>
+                    <div style="font-size: 18px; font-weight: bold; color: #1976d2;" id="cityCount">-</div>
+                </div>
+                <div style="text-align: center; background: rgba(255,255,255,0.8); padding: 10px; border-radius: 8px;">
+                    <div style="font-size: 12px; color: #666;">日期范围</div>
+                    <div style="font-size: 14px; font-weight: bold; color: #1976d2;" id="dateRange">-</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="clear-section" style="background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%); border-radius: 15px; padding: 20px; margin-bottom: 20px;">
+            <h3 style="margin-bottom: 15px; color: #f57c00;">🗑️ 清空历史数据</h3>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <button class="clear-btn" onclick="clearHistory('all')" style="padding: 8px 16px; background: #f44336; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px;">清空所有数据</button>
+                <button class="clear-btn" onclick="clearHistory('city')" style="padding: 8px 16px; background: #ff9800; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px;">清空当前城市</button>
+                <button class="clear-btn" onclick="clearHistory('date')" style="padding: 8px 16px; background: #ff5722; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px;">清空指定日期</button>
+            </div>
+            <div style="margin-top: 10px; font-size: 12px; color: #666;">
+                <span>💡 提示：清空操作不可恢复，请谨慎操作</span>
+            </div>
+        </div>
+
+        <div class="loading" id="loading">
+            <div>正在查询历史天气信息，请稍候...</div>
+        </div>
+
+        <div class="error-message" id="errorMessage"></div>
+
+        <div class="history-results" id="historyResults">
+            <!-- 历史天气结果将在这里显示 -->
+        </div>
+    </div>
+
+    <script>
+        const citySelect = document.getElementById('citySelect');
+        const dateInput = document.getElementById('dateInput');
+        const searchBtn = document.getElementById('searchBtn');
+        const loading = document.getElementById('loading');
+        const errorMessage = document.getElementById('errorMessage');
+        const historyResults = document.getElementById('historyResults');
+        const historyForm = document.getElementById('historyForm');
+
+        // 页面加载时获取城市列表
+        async function loadCities() {
+            try {
+                const response = await fetch('/api/cities');
+                const data = await response.json();
+                
+                if (data.success) {
+                    data.cities.forEach(city => {
+                        const option = document.createElement('option');
+                        option.value = city;
+                        option.textContent = city;
+                        citySelect.appendChild(option);
+                    });
+                }
+            } catch (error) {
+                console.error('加载城市列表失败:', error);
+            }
+        }
+
+        // 加载统计信息
+        async function loadStats() {
+            try {
+                const response = await fetch('/api/stats');
+                const data = await response.json();
+                
+                if (data.success) {
+                    const stats = data.data;
+                    document.getElementById('totalRecords').textContent = stats.total_records;
+                    document.getElementById('cityCount').textContent = stats.city_count;
+                    
+                    if (stats.date_range.start && stats.date_range.end) {
+                        document.getElementById('dateRange').textContent = `${stats.date_range.start} 至 ${stats.date_range.end}`;
+                    } else {
+                        document.getElementById('dateRange').textContent = '暂无数据';
+                    }
+                }
+            } catch (error) {
+                console.error('加载统计信息失败:', error);
+            }
+        }
+
+        // 清空历史数据
+        async function clearHistory(type) {
+            let confirmMessage = '';
+            let clearData = { type: type };
+            
+            switch (type) {
+                case 'all':
+                    confirmMessage = '确定要清空所有历史天气数据吗？此操作不可恢复！';
+                    break;
+                case 'city':
+                    const selectedCity = citySelect.value;
+                    if (!selectedCity) {
+                        alert('请先选择要清空的城市');
+                        return;
+                    }
+                    confirmMessage = `确定要清空 ${selectedCity} 的所有历史天气数据吗？`;
+                    clearData.city = selectedCity;
+                    break;
+                case 'date':
+                    const selectedCity2 = citySelect.value;
+                    const selectedDate = dateInput.value;
+                    if (!selectedCity2 || !selectedDate) {
+                        alert('请先选择城市和日期');
+                        return;
+                    }
+                    confirmMessage = `确定要清空 ${selectedCity2} ${selectedDate} 的历史天气数据吗？`;
+                    clearData.city = selectedCity2;
+                    clearData.date = selectedDate;
+                    break;
+            }
+            
+            if (!confirm(confirmMessage)) {
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/clear_history', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(clearData)
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    alert(data.message);
+                    // 重新加载统计信息
+                    loadStats();
+                    // 如果当前有显示的历史数据，清空显示
+                    hideHistoryResults();
+                } else {
+                    alert('清空失败: ' + data.error);
+                }
+            } catch (error) {
+                alert('清空操作失败，请稍后重试');
+                console.error('Error:', error);
+            }
+        }
+
+        // 查询历史天气
+        async function searchHistory(city, date = '') {
+            if (!city) {
+                showError('请选择城市');
+                return;
+            }
+
+            showLoading(true);
+            hideError();
+            hideHistoryResults();
+
+            try {
+                let url = `/api/history?city=${encodeURIComponent(city)}`;
+                if (date) {
+                    url += `&date=${date}`;
+                }
+
+                const response = await fetch(url);
+                const data = await response.json();
+
+                if (data.error) {
+                    showError(data.error);
+                } else if (data.success) {
+                    showHistoryResults(data.data, city);
+                } else {
+                    showError('查询失败，请稍后重试');
+                }
+            } catch (error) {
+                showError('网络错误，请稍后重试');
+                console.error('Error:', error);
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // 显示加载状态
+        function showLoading(show) {
+            if (show) {
+                loading.classList.add('show');
+                searchBtn.disabled = true;
+                searchBtn.textContent = '查询中...';
+            } else {
+                loading.classList.remove('show');
+                searchBtn.disabled = false;
+                searchBtn.textContent = '查询历史';
+            }
+        }
+
+        // 显示错误信息
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.classList.add('show');
+        }
+
+        // 隐藏错误信息
+        function hideError() {
+            errorMessage.classList.remove('show');
+        }
+
+        // 显示历史天气结果
+        function showHistoryResults(records, cityName) {
+            if (!records || records.length === 0) {
+                historyResults.innerHTML = '<div class="no-data">暂无历史天气记录</div>';
+                historyResults.classList.add('show');
+                return;
+            }
+
+            let html = '';
+            
+            records.forEach(record => {
+                html += `
+                    <div class="history-item">
+                        <div class="history-header">
+                            <div class="history-title">${record.city_name}</div>
+                            <div class="history-date">${record.date}</div>
+                        </div>
+                        <div class="weather-grid">
+                `;
+
+                // 添加天气信息卡片
+                if (record.weather) {
+                    html += `
+                        <div class="weather-card">
+                            <div class="weather-label">天气状况</div>
+                            <div class="weather-value">${record.weather}</div>
+                        </div>
+                    `;
+                }
+
+                if (record.temperature) {
+                    html += `
+                        <div class="weather-card">
+                            <div class="weather-label">温度</div>
+                            <div class="weather-value">${record.temperature}</div>
+                        </div>
+                    `;
+                }
+
+                if (record.wind) {
+                    html += `
+                        <div class="weather-card">
+                            <div class="weather-label">风向</div>
+                            <div class="weather-value">${record.wind}</div>
+                        </div>
+                    `;
+                }
+
+                if (record.sunrise) {
+                    html += `
+                        <div class="weather-card">
+                            <div class="weather-label">日出时间</div>
+                            <div class="weather-value">${record.sunrise}</div>
+                        </div>
+                    `;
+                }
+
+                if (record.sunset) {
+                    html += `
+                        <div class="weather-card">
+                            <div class="weather-label">日落时间</div>
+                            <div class="weather-value">${record.sunset}</div>
+                        </div>
+                    `;
+                }
+
+                if (record.clothing) {
+                    html += `
+                        <div class="weather-card">
+                            <div class="weather-label">穿衣指数</div>
+                            <div class="weather-value" style="font-size: 1em;">${record.clothing}</div>
+                        </div>
+                    `;
+                }
+
+                if (record.cold) {
+                    html += `
+                        <div class="weather-card">
+                            <div class="weather-label">感冒指数</div>
+                            <div class="weather-value" style="font-size: 1em;">${record.cold}</div>
+                        </div>
+                    `;
+                }
+
+                if (record.sports) {
+                    html += `
+                        <div class="weather-card">
+                            <div class="weather-label">运动指数</div>
+                            <div class="weather-value" style="font-size: 1em;">${record.sports}</div>
+                        </div>
+                    `;
+                }
+
+                if (record.uv) {
+                    html += `
+                        <div class="weather-card">
+                            <div class="weather-label">紫外线指数</div>
+                            <div class="weather-value" style="font-size: 1em;">${record.uv}</div>
+                        </div>
+                    `;
+                }
+
+                html += `
+                        </div>
+                    </div>
+                `;
+            });
+
+            historyResults.innerHTML = html;
+            historyResults.classList.add('show');
+        }
+
+        // 隐藏历史天气结果
+        function hideHistoryResults() {
+            historyResults.classList.remove('show');
+        }
+
+        // 事件监听器
+        historyForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const city = citySelect.value;
+            const date = dateInput.value;
+            searchHistory(city, date);
+        });
+
+        // 页面加载完成后的初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            loadCities();
+            loadStats();
+        });
+    </script>
+</body>
+</html> 

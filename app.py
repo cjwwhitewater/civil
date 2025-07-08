@@ -371,20 +371,22 @@ def fetch_all_cities_weather():
     """获取所有城市的天气信息并保存到数据库"""
     logger.info("开始获取所有城市的天气信息")
     
-    for city_name in CITY_CODES.keys():
-        try:
-            logger.info(f"正在获取 {city_name} 的天气信息")
-            weather_info = get_weather_info(city_name)
-            save_weather_to_db(weather_info)
-            
-            # 添加延迟，避免请求过于频繁
-            time.sleep(random.uniform(2, 4))
-            
-        except Exception as e:
-            logger.error(f"获取 {city_name} 天气信息时发生错误: {str(e)}")
-            continue
-    
-    logger.info("所有城市天气信息获取完成")
+    # 在应用上下文中执行数据库操作
+    with app.app_context():
+        for city_name in CITY_CODES.keys():
+            try:
+                logger.info(f"正在获取 {city_name} 的天气信息")
+                weather_info = get_weather_info(city_name)
+                save_weather_to_db(weather_info)
+                
+                # 添加延迟，避免请求过于频繁
+                time.sleep(random.uniform(2, 4))
+                
+            except Exception as e:
+                logger.error(f"获取 {city_name} 天气信息时发生错误: {str(e)}")
+                continue
+        
+        logger.info("所有城市天气信息获取完成")
 
 def init_scheduler():
     """初始化定时任务"""
